@@ -69,7 +69,15 @@ This fork adds an Android-friendly PWA share target. After NeonLink is installed
 
 The official `alexscifier/neonlink` Docker image does not include this PWA sharing feature. To use Android sharing, run an image built from this fork.
 
-One simple approach is to build the image on your Unraid host:
+If the GitHub Container Registry image is available, the easiest Unraid Apps/template migration is to edit the existing NeonLink container and change only the repository/image field:
+
+```text
+ghcr.io/neocwoobie/neonlink:latest
+```
+
+Keep your existing port and volume mappings. In particular, keep the current host path that maps to `/app/data`; that is where your NeonLink database and settings live.
+
+If you prefer to build the image directly on your Unraid host instead:
 
 ```sh
 git clone https://github.com/neocwoobie/neonlink.git

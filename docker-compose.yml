@@ -2,7 +2,8 @@ version: "3.8"
 
 services:
   neonlink:
-    image: alexscifier/neonlink
+    build: .
+    image: neonlink-pwa:latest
     container_name: neonlink
     # user: 1000:1000 # optional
     volumes:

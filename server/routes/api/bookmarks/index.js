@@ -128,14 +128,17 @@ export default async function (fastify, opts) {
 
       if (icon !== "") icon = await imgUrlToBase64(icon);
 
-      let existingBookmark = appContext.stores.bookmarks.getItemByUrl(url);
+      const user = appContext.request.get(appRequestsKeys.Session);
+      let existingBookmark = appContext.stores.bookmarks.getItemByUrl(
+        user.userId,
+        url
+      );
       if (existingBookmark) {
         throw fastify.httpErrors.badRequest(
           "Bookmark with this url is already exist"
         );
       }
       reply.statusCode = 201;
-      const user = appContext.request.get(appRequestsKeys.Session);
       return appContext.stores.bookmarks.addItem(
         url,
         title,
@@ -174,9 +177,12 @@ export default async function (fastify, opts) {
           throw fastify.httpErrors.notAcceptable(
             `url shoud not be empty ${title}`
           );
-        let existingBookmark = appContext.stores.bookmarks.getItemByUrl(url);
-        if (existingBookmark) return;
         const user = appContext.request.get(appRequestsKeys.Session);
+        let existingBookmark = appContext.stores.bookmarks.getItemByUrl(
+          user.userId,
+          url
+        );
+        if (existingBookmark) return;
         appContext.stores.bookmarks.addItem(
           url,
           title,

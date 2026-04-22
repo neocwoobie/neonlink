@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { Link } from "react-router-dom";
 import Logo from "../../components/Logo";
 import { BUTTON_BASE_CLASS } from "../../helpers/baseDesign";
@@ -34,10 +34,13 @@ export default function LoginPage() {
   const [error, setError] = useState();
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo =
+    new URLSearchParams(location.search).get("redirect") || "/";
   useEffect(() => {
-    if (forceRegistration) navigate("/registration");
+    if (forceRegistration) navigate("/register");
     if (authenticated === true || authenticationEnabled === false)
-      navigate("/");
+      navigate(redirectTo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated, forceRegistration, authenticationEnabled]);
 
@@ -54,7 +57,7 @@ export default function LoginPage() {
       if (res.ok) {
         await fetchCurrentUser();
         await fetchUserSettings();
-        navigate("/");
+        navigate(redirectTo);
       } else {
         setError(await res.json());
       }

@@ -23,6 +23,7 @@ NeonLink is a simple and open-source self-hosted bookmark service. It is lightwe
 - Lightweight
 - Private
 - Dashboard
+- Android PWA share target for saving links from the Android share menu
 
 ## Installation
 
@@ -46,12 +47,69 @@ Or you can install with `docker-compose.yml` file
 
 ```sh
 #clone repo
-git clone https://github.com/AlexSciFier/neonlink.git
+git clone https://github.com/neocwoobie/neonlink.git
 cd neonlink
 
-#edit doker-compose.yml and run docker compose
+#edit docker-compose.yml and run docker compose
 docker-compose up -d
 ```
+
+## Android PWA Share Target
+
+This fork adds an Android-friendly PWA share target. After NeonLink is installed as a PWA on Android, it can appear in the Android share menu. Shared links open a small `/share` page where you can save the link to an existing group or create a new group during the save flow.
+
+### What changed
+
+- Added a web manifest `share_target` pointing to `/share`.
+- Added a minimal service worker so Android Chrome can install NeonLink as a PWA.
+- Added a `/share` page for incoming shared links.
+- Added `POST /api/share` on the server to save a shared URL, create a new group when requested, attach tags, and handle duplicate URLs gracefully.
+
+### Deploying this fork on Unraid
+
+The official `alexscifier/neonlink` Docker image does not include this PWA sharing feature. To use Android sharing, run an image built from this fork.
+
+One simple approach is to build the image on your Unraid host:
+
+```sh
+git clone https://github.com/neocwoobie/neonlink.git
+cd neonlink
+docker build -t neonlink-pwa:latest .
+```
+
+Then update your Unraid Docker container:
+
+- Repository/image: `neonlink-pwa:latest`
+- Container port: `3333`
+- Host port: any port you prefer, for example `3333` or `80`
+- Data volume: keep your existing NeonLink data mapping to `/app/data`
+- Background volume: keep your existing background mapping to `/app/public/static/media/background`
+
+Keeping the same `/app/data` volume preserves your existing bookmarks and settings.
+
+If you use the included `docker-compose.yml`, it builds `neonlink-pwa:latest` from this repository instead of pulling the official image:
+
+```sh
+docker compose up -d --build
+```
+
+### Android setup
+
+1. Connect your Android phone to Tailscale.
+2. Open your NeonLink URL in Chrome. HTTPS is recommended for reliable PWA installation and share-target behavior.
+3. Log in to NeonLink.
+4. In Chrome, open the menu and choose `Install app` or `Add to Home screen`.
+5. Open the installed NeonLink app from your Android home screen once.
+6. Open another app or webpage, tap Android share, then choose `NeonLink`.
+7. Confirm the URL, choose an existing group or type a new group name, then tap `Save`.
+
+If NeonLink does not appear in the Android share menu:
+
+- Make sure you are running this fork, not the official Docker image.
+- Make sure NeonLink was installed as a PWA from Chrome.
+- Prefer an HTTPS URL, especially when using Tailscale.
+- Remove the home-screen app and install it again after updating the container.
+- Reopen Chrome or reboot Android if the share menu cache is stale.
 
 ## Development
 

@@ -19,8 +19,10 @@ export default class BookmarksStore {
       .prepare(insertQuery)
       .run(insertParams).lastInsertRowid;
 
+    if (!tags?.length) return bookmarkId;
+
     const tagsSelectQuery = `SELECT id FROM tags WHERE name IN (${new Array(
-      tags?.length || 0
+      tags.length
     )
       .fill("?")
       .join(",")})`;
@@ -34,7 +36,6 @@ export default class BookmarksStore {
       }
     });
     transaction(tagsSelectIds);
-    transaction(tags);
     return bookmarkId;
   }
 

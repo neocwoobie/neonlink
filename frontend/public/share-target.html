@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0891b2" />
+    <title>Share to NeonLink</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #0891b2, #c026d3);
+        color: #111827;
+      }
+
+      main {
+        width: min(100%, 680px);
+        margin: 0 auto;
+        padding: 18px 14px 32px;
+      }
+
+      .panel {
+        margin-top: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+        padding: 18px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 24px;
+        font-weight: 400;
+      }
+
+      label {
+        display: block;
+        margin: 12px 0 6px;
+        font-size: 13px;
+        color: #334155;
+      }
+
+      input,
+      textarea,
+      select,
+      button {
+        width: 100%;
+        min-height: 42px;
+        border-radius: 6px;
+        font: inherit;
+      }
+
+      input,
+      textarea,
+      select {
+        border: 1px solid #94a3b8;
+        background: #ffffff;
+        color: #111827;
+        padding: 9px 11px;
+      }
+
+      textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 56px;
+        gap: 8px;
+        align-items: end;
+      }
+
+      input[type="color"] {
+        padding: 4px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 16px;
+      }
+
+      .actions button {
+        width: auto;
+        min-width: 108px;
+        border: 0;
+        background: #06b6d4;
+        color: #ffffff;
+        padding: 9px 16px;
+      }
+
+      .actions .secondary {
+        background: #475569;
+      }
+
+      button:disabled {
+        background: #94a3b8;
+      }
+
+      .message {
+        margin: 12px 0 0;
+        min-height: 22px;
+        color: #334155;
+        overflow-wrap: anywhere;
+      }
+
+      .error {
+        color: #b91c1c;
+      }
+
+      .success {
+        color: #047857;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #111827;
+          color: #f8fafc;
+        }
+
+        .panel {
+          border-color: rgba(255, 255, 255, 0.12);
+          background: rgba(17, 24, 39, 0.95);
+        }
+
+        label,
+        .message {
+          color: #cbd5e1;
+        }
+
+        input,
+        textarea,
+        select {
+          border-color: #475569;
+          background: #020617;
+          color: #f8fafc;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <h1>Share to NeonLink</h1>
+        <form id="shareForm">
+          <label for="url">URL</label>
+          <input id="url" name="url" type="url" required />
+
+          <label for="title">Title</label>
+          <input id="title" name="title" type="text" />
+
+          <label for="desc">Description</label>
+          <textarea id="desc" name="desc"></textarea>
+
+          <label for="categoryId">Group</label>
+          <select id="categoryId" name="categoryId">
+            <option value="">No group</option>
+          </select>
+
+          <div class="row">
+            <div>
+              <label for="newCategoryName">New group name</label>
+              <input id="newCategoryName" name="newCategoryName" type="text" />
+            </div>
+            <div>
+              <label for="newCategoryColor">Color</label>
+              <input
+                id="newCategoryColor"
+                name="newCategoryColor"
+                type="color"
+                value="#06b6d4"
+              />
+            </div>
+          </div>
+
+          <label for="tags">Tags</label>
+          <input id="tags" name="tags" type="text" placeholder="comma separated" />
+
+          <p id="message" class="message">Loading...</p>
+
+          <div class="actions">
+            <button class="secondary" type="button" id="openApp">Open</button>
+            <button type="submit" id="saveButton">Save</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        "use strict";
+
+        var initialText = "";
+        var elements = {};
+
+        function $(id) {
+          return document.getElementById(id);
+        }
+
+        function showMessage(text, type) {
+          var message = elements.message || $("message");
+          message.textContent = text || "";
+          message.className = "message" + (type ? " " + type : "");
+        }
+
+        function extractUrl(text) {
+          var match = String(text || "").match(/https?:\/\/[^\s<>"']+/i);
+          return match ? match[0] : "";
+        }
+
+        function normalizeShareData() {
+          var params = new URLSearchParams(window.location.search);
+          var text = params.get("text") || "";
+          var url = params.get("url") || extractUrl(text);
+          initialText = text;
+          elements.url.value = url || "";
+          elements.title.value = params.get("title") || "";
+          elements.desc.value = url ? text.replace(url, "").trim() : text.trim();
+        }
+
+        async function requestJson(url, options) {
+          var response = await fetch(url, {
+            credentials: "include",
+            ...(options || {}),
+            headers: {
+              "Content-Type": "application/json",
+              ...((options && options.headers) || {}),
+            },
+          });
+
+          var body = null;
+          try {
+            body = await response.json();
+          } catch (error) {
+            body = null;
+          }
+
+          if (!response.ok) {
+            throw new Error((body && body.message) || response.statusText);
+          }
+
+          return body;
+        }
+
+        async function fetchUrlInfo() {
+          var url = elements.url.value;
+          if (!url || !url.startsWith("http")) return;
+
+          try {
+            var data = await requestJson("/api/utils/urlinfo", {
+              method: "POST",
+              body: JSON.stringify({ url: url }),
+            });
+            if (!elements.title.value) elements.title.value = data.title || "";
+            if (!elements.desc.value) elements.desc.value = data.desc || "";
+            elements.icon = data.icon || "";
+          } catch (error) {
+            console.warn("Cannot read URL info", error);
+          }
+        }
+
+        async function loadCategories() {
+          var categories = await requestJson("/api/categories");
+          categories.forEach(function (category) {
+            var option = document.createElement("option");
+            option.value = String(category.id);
+            option.textContent = category.name;
+            elements.categoryId.appendChild(option);
+          });
+        }
+
+        async function ensureAuthenticated() {
+          var user = await requestJson("/api/users/me");
+          if (!user.authenticated) {
+            showMessage("Please log in first, then share again.", "error");
+            elements.saveButton.disabled = true;
+            return false;
+          }
+          return true;
+        }
+
+        function collectPayload() {
+          var newCategoryName = elements.newCategoryName.value.trim();
+          return {
+            url: elements.url.value.trim(),
+            title: elements.title.value.trim(),
+            text: initialText,
+            desc: elements.desc.value.trim(),
+            icon: elements.icon || "",
+            categoryId: newCategoryName
+              ? undefined
+              : Number(elements.categoryId.value) || undefined,
+            newCategoryName: newCategoryName || undefined,
+            newCategoryColor: elements.newCategoryColor.value || "#06b6d4",
+            tags: elements.tags.value
+              .split(",")
+              .map(function (tag) {
+                return tag.trim();
+              })
+              .filter(Boolean)
+              .slice(0, 10),
+          };
+        }
+
+        async function saveShare(event) {
+          event.preventDefault();
+          elements.saveButton.disabled = true;
+          showMessage("Saving...");
+
+          try {
+            var result = await requestJson("/api/share", {
+              method: "POST",
+              body: JSON.stringify(collectPayload()),
+            });
+            showMessage(
+              result.duplicate
+                ? "This link is already in NeonLink."
+                : "Saved to NeonLink.",
+              "success"
+            );
+          } catch (error) {
+            showMessage(error.message || "Cannot save link.", "error");
+            elements.saveButton.disabled = false;
+          }
+        }
+
+        async function initialize() {
+          elements = {
+            form: $("shareForm"),
+            url: $("url"),
+            title: $("title"),
+            desc: $("desc"),
+            categoryId: $("categoryId"),
+            newCategoryName: $("newCategoryName"),
+            newCategoryColor: $("newCategoryColor"),
+            tags: $("tags"),
+            message: $("message"),
+            saveButton: $("saveButton"),
+            openApp: $("openApp"),
+            icon: "",
+          };
+
+          elements.form.addEventListener("submit", saveShare);
+          elements.openApp.addEventListener("click", function () {
+            window.location.href = "/";
+          });
+          elements.url.addEventListener("blur", function () {
+            if (elements.url.value && !elements.url.value.startsWith("http")) {
+              elements.url.value = "https://" + elements.url.value;
+            }
+            fetchUrlInfo();
+          });
+
+          normalizeShareData();
+
+          try {
+            if (!(await ensureAuthenticated())) return;
+            await loadCategories();
+            showMessage("Ready.");
+            fetchUrlInfo();
+          } catch (error) {
+            showMessage(error.message || "Cannot load NeonLink.", "error");
+          }
+        }
+
+        window.addEventListener("error", function (event) {
+          showMessage(event.message || "Unexpected error.", "error");
+        });
+
+        initialize();
+      })();
+    </script>
+  </body>
+</html>

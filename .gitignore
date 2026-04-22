@@ -4,3 +4,8 @@ data
 background
 .vscode
 .idea
+android-app/.gradle
+android-app/build
+android-app/app/build
+*.apk
+*.aab

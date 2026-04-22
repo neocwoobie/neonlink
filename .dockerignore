@@ -9,3 +9,4 @@ Dockerfile.prod
 .vscode
 docs
 .git
+android-app

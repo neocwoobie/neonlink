@@ -24,6 +24,7 @@ NeonLink is a simple and open-source self-hosted bookmark service. It is lightwe
 - Private
 - Dashboard
 - Android PWA share target for saving links from the Android share menu
+- Experimental native Android share helper app
 
 ## Installation
 
@@ -56,13 +57,13 @@ docker-compose up -d
 
 ## Android PWA Share Target
 
-This fork adds an Android-friendly PWA share target. After NeonLink is installed as a PWA on Android, it can appear in the Android share menu. Shared links open a small `/share` page where you can save the link to an existing group or create a new group during the save flow.
+This fork adds an Android-friendly PWA share target. After NeonLink is installed as a PWA on Android, it can appear in the Android share menu. Shared links open a small `/share-target.html` page where you can save the link to an existing group or create a new group during the save flow.
 
 ### What changed
 
-- Added a web manifest `share_target` pointing to `/share`.
+- Added a web manifest `share_target` pointing to `/share-target.html`.
 - Added a minimal service worker so Android Chrome can install NeonLink as a PWA.
-- Added a `/share` page for incoming shared links.
+- Added a standalone `/share-target.html` page for incoming shared links.
 - Added `POST /api/share` on the server to save a shared URL, create a new group when requested, attach tags, and handle duplicate URLs gracefully.
 
 ### Deploying this fork on Unraid
@@ -72,7 +73,7 @@ The official `alexscifier/neonlink` Docker image does not include this PWA shari
 If the GitHub Container Registry image is available, the easiest Unraid Apps/template migration is to edit the existing NeonLink container and change only the repository/image field:
 
 ```text
-ghcr.io/neocwoobie/neonlink:latest
+ghcr.io/neocwoobie/neonlink:android-pwa-share
 ```
 
 Keep your existing port and volume mappings. In particular, keep the current host path that maps to `/app/data`; that is where your NeonLink database and settings live.
@@ -118,6 +119,18 @@ If NeonLink does not appear in the Android share menu:
 - Prefer an HTTPS URL, especially when using Tailscale.
 - Remove the home-screen app and install it again after updating the container.
 - Reopen Chrome or reboot Android if the share menu cache is stale.
+
+## Native Android App
+
+This branch also includes an experimental native Android app under `android-app/`. It does not replace the web app. It is a lightweight Android share helper that:
+
+- appears directly in the Android share menu,
+- stores your NeonLink server URL on the phone,
+- logs in through `/api/users/login`,
+- loads groups through `/api/categories`,
+- saves shared links through `/api/share`.
+
+See `android-app/README.md` for build and install steps. The native app can use either HTTPS or private HTTP URLs, so it is useful if you want Android sharing without relying on PWA/WebAPK behavior.
 
 ## Development
 

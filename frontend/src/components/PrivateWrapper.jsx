@@ -9,12 +9,12 @@ import {
   appSettingsKeys,
   useAppSettingsStore,
 } from "../stores/appSettingsStore";
+import SharePage from "../pages/share";
 
 const Dashboard = React.lazy(() => import("../pages/dashboard"));
 const NotFound = React.lazy(() => import("../pages/notFound"));
 const EditBookmark = React.lazy(() => import("../pages/editBookmark"));
 const AddPage = React.lazy(() => import("../pages/addBookmark"));
-const SharePage = React.lazy(() => import("../pages/share"));
 const SettingsPage = React.lazy(() => import("../pages/settings"));
 const LinksPage = React.lazy(() => import("../pages/link"));
 

@@ -50,6 +50,29 @@ android-app/app/build/outputs/apk/debug/
 7. Choose `NeonLink Share` in the Android share menu.
 8. Confirm the URL, choose an existing group or enter a new group name, then tap `Save to NeonLink`.
 
+## Troubleshooting
+
+If you see an error like:
+
+```text
+Unable to resolve host "tomato.tail16e0f.ts.net"
+```
+
+the app cannot resolve the Tailscale MagicDNS name. Check these first:
+
+1. Open the Android Tailscale app and make sure it says `Connected`.
+2. In the Android Tailscale app, make sure DNS/MagicDNS is enabled for the phone.
+3. Try opening the same NeonLink URL in Android Chrome.
+4. If MagicDNS still fails in the native app, use the device Tailscale IP directly instead of the MagicDNS name.
+
+For example, in the Android Tailscale app, open your Unraid device and copy its `100.x.x.x` address. Then enter this in NeonLink Share:
+
+```text
+http://100.x.x.x:3333
+```
+
+The native Android app allows private HTTP URLs, so this can work even when the PWA needs HTTPS.
+
 ## Notes
 
 - This app requires the forked NeonLink server that includes `POST /api/share`.

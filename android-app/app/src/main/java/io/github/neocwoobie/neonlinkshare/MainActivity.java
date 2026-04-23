@@ -16,6 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.UnknownHostException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -35,6 +37,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.net.ssl.SSLHandshakeException;
 
 public class MainActivity extends Activity {
     private static final String PREFS = "neonlink";
@@ -115,6 +119,12 @@ public class MainActivity extends Activity {
         subtitle.setPadding(0, dp(2), 0, dp(16));
         root.addView(subtitle);
 
+        statusText = new TextView(this);
+        statusText.setText("Enter your NeonLink URL, then tap Connect.");
+        statusText.setTextColor(Color.rgb(71, 85, 105));
+        statusText.setPadding(0, 0, 0, dp(12));
+        root.addView(statusText);
+
         serverUrlInput = makeInput("NeonLink URL, e.g. https://tomato.tailnet.ts.net", false);
         addLabeled(root, "Server", serverUrlInput);
 
@@ -159,11 +169,6 @@ public class MainActivity extends Activity {
 
         saveButton = makeButton("Save to NeonLink");
         root.addView(saveButton);
-
-        statusText = new TextView(this);
-        statusText.setTextColor(Color.rgb(71, 85, 105));
-        statusText.setPadding(0, dp(16), 0, 0);
-        root.addView(statusText);
 
         connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -577,7 +582,7 @@ public class MainActivity extends Activity {
                     postUi(new Runnable() {
                         @Override
                         public void run() {
-                            showStatus(error.getMessage(), true);
+                            showStatus(friendlyError(error), true);
                         }
                     });
                 } finally {
@@ -605,6 +610,28 @@ public class MainActivity extends Activity {
     private void showStatus(String message, boolean error) {
         statusText.setText(message == null ? "" : message);
         statusText.setTextColor(error ? Color.rgb(185, 28, 28) : Color.rgb(71, 85, 105));
+        if (error && message != null && !message.isEmpty()) {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private String friendlyError(Exception error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof UnknownHostException) {
+                return "Cannot resolve this host. If you use a Tailscale MagicDNS name, make sure the Android Tailscale app is connected and DNS is enabled. You can also try the Tailscale IP directly, for example http://100.x.x.x:3333.";
+            }
+            if (current instanceof SSLHandshakeException) {
+                return "HTTPS certificate check failed. If this is a private NAS URL, try the Tailscale HTTPS name or use http://100.x.x.x:3333.";
+            }
+            current = current.getCause();
+        }
+
+        String message = error.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            return "Request failed. Check the server URL and network connection.";
+        }
+        return message;
     }
 
     private int dp(int value) {

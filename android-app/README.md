@@ -50,6 +50,8 @@ android-app/app/build/outputs/apk/debug/
 7. Choose `NeonLink Share` in the Android share menu.
 8. Confirm the URL, choose an existing group or enter a new group name, then tap `Save to NeonLink`.
 
+After the link is saved, the app shows a short popup message and closes automatically so you return to the app you shared from.
+
 ## Troubleshooting
 
 If you see an error like:

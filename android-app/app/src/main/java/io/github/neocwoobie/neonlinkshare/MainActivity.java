@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private static final String PREF_SERVER_URL = "server_url";
     private static final String PREF_COOKIE = "cookie";
     private static final int ACCENT = Color.rgb(8, 145, 178);
+    private static final long CLOSE_AFTER_SUCCESS_MS = 900;
     private static final Pattern URL_PATTERN =
             Pattern.compile("https?://[^\\s<>\"']+", Pattern.CASE_INSENSITIVE);
 
@@ -365,9 +366,9 @@ public class MainActivity extends Activity {
                     @Override
                     public void run() {
                         if (response.optBoolean("duplicate", false)) {
-                            showStatus("This link is already in NeonLink.", false);
+                            completeShare("This link is already in NeonLink.");
                         } else {
-                            showStatus("Saved to NeonLink.", false);
+                            completeShare("Saved to NeonLink.");
                         }
                     }
                 });
@@ -613,6 +614,18 @@ public class MainActivity extends Activity {
         if (error && message != null && !message.isEmpty()) {
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void completeShare(String message) {
+        showStatus(message, false);
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        setResult(RESULT_OK);
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                finish();
+            }
+        }, CLOSE_AFTER_SUCCESS_MS);
     }
 
     private String friendlyError(Exception error) {

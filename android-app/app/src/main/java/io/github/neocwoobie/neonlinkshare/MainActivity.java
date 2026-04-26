@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -44,13 +45,29 @@ public class MainActivity extends Activity {
     private static final String PREFS = "neonlink";
     private static final String PREF_SERVER_URL = "server_url";
     private static final String PREF_COOKIE = "cookie";
+    private static final String DEFAULT_GROUP_COLOR = "#06b6d4";
     private static final int ACCENT = Color.rgb(8, 145, 178);
     private static final long CLOSE_AFTER_SUCCESS_MS = 900;
+    private static final String[] GROUP_COLOR_VALUES = {
+            "#06b6d4",
+            "#0ea5e9",
+            "#3b82f6",
+            "#8b5cf6",
+            "#d946ef",
+            "#f43f5e",
+            "#f97316",
+            "#eab308",
+            "#22c55e",
+            "#14b8a6",
+            "#64748b",
+            "#111827"
+    };
     private static final Pattern URL_PATTERN =
             Pattern.compile("https?://[^\\s<>\"']+", Pattern.CASE_INSENSITIVE);
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final List<Category> categories = new ArrayList<>();
+    private final List<TextView> groupColorSwatches = new ArrayList<>();
 
     private Handler mainHandler;
     private SharedPreferences prefs;
@@ -66,14 +83,15 @@ public class MainActivity extends Activity {
     private EditText titleInput;
     private EditText descriptionInput;
     private EditText newGroupInput;
-    private EditText groupColorInput;
     private EditText tagsInput;
     private Spinner groupSpinner;
     private Button connectButton;
     private Button loginButton;
     private Button saveButton;
     private TextView statusText;
+    private TextView selectedGroupColorText;
     private ArrayAdapter<String> categoryAdapter;
+    private String selectedGroupColor = DEFAULT_GROUP_COLOR;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -161,9 +179,8 @@ public class MainActivity extends Activity {
         newGroupInput = makeInput("Optional new group name", false);
         addLabeled(root, "New group", newGroupInput);
 
-        groupColorInput = makeInput("#06b6d4", false);
-        groupColorInput.setText("#06b6d4");
-        addLabeled(root, "New group color", groupColorInput);
+        addLabeled(root, "New group color", createGroupColorPicker());
+        updateSelectedGroupColor(DEFAULT_GROUP_COLOR);
 
         tagsInput = makeInput("comma, separated, tags", false);
         addLabeled(root, "Tags", tagsInput);
@@ -220,6 +237,81 @@ public class MainActivity extends Activity {
         params.setMargins(0, dp(8), 0, dp(8));
         button.setLayoutParams(params);
         return button;
+    }
+
+    private LinearLayout createGroupColorPicker() {
+        LinearLayout picker = new LinearLayout(this);
+        picker.setOrientation(LinearLayout.VERTICAL);
+
+        LinearLayout row = null;
+        for (int i = 0; i < GROUP_COLOR_VALUES.length; i++) {
+            if (i % 4 == 0) {
+                row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                picker.addView(row);
+            }
+
+            final String color = GROUP_COLOR_VALUES[i];
+            TextView swatch = new TextView(this);
+            swatch.setTag(color);
+            swatch.setGravity(android.view.Gravity.CENTER);
+            swatch.setTextSize(18);
+            swatch.setContentDescription("Group color " + color);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(48), dp(44));
+            params.setMargins(0, dp(4), dp(8), dp(4));
+            swatch.setLayoutParams(params);
+            swatch.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    updateSelectedGroupColor(color);
+                }
+            });
+
+            groupColorSwatches.add(swatch);
+            row.addView(swatch);
+        }
+
+        selectedGroupColorText = new TextView(this);
+        selectedGroupColorText.setTextColor(Color.rgb(71, 85, 105));
+        selectedGroupColorText.setPadding(0, dp(4), 0, 0);
+        picker.addView(selectedGroupColorText);
+
+        return picker;
+    }
+
+    private void updateSelectedGroupColor(String color) {
+        selectedGroupColor = normalizeColor(color);
+        for (TextView swatch : groupColorSwatches) {
+            String swatchColor = String.valueOf(swatch.getTag());
+            boolean selected = selectedGroupColor.equalsIgnoreCase(swatchColor);
+            swatch.setBackground(makeColorSwatchBackground(swatchColor, selected));
+            swatch.setText(selected ? "✓" : "");
+            swatch.setTextColor(getReadableTextColor(swatchColor));
+        }
+        if (selectedGroupColorText != null) {
+            selectedGroupColorText.setText("Selected " + selectedGroupColor.toUpperCase(Locale.US));
+        }
+    }
+
+    private GradientDrawable makeColorSwatchBackground(String color, boolean selected) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.RECTANGLE);
+        drawable.setCornerRadius(dp(8));
+        drawable.setColor(Color.parseColor(normalizeColor(color)));
+        drawable.setStroke(
+                selected ? dp(3) : dp(1),
+                selected ? Color.rgb(17, 24, 39) : Color.rgb(203, 213, 225)
+        );
+        return drawable;
+    }
+
+    private int getReadableTextColor(String color) {
+        int parsedColor = Color.parseColor(normalizeColor(color));
+        int red = Color.red(parsedColor);
+        int green = Color.green(parsedColor);
+        int blue = Color.blue(parsedColor);
+        double luminance = 0.299 * red + 0.587 * green + 0.114 * blue;
+        return luminance < 150 ? Color.WHITE : Color.rgb(17, 24, 39);
     }
 
     private void addLabeled(LinearLayout root, String label, View child) {
@@ -391,7 +483,7 @@ public class MainActivity extends Activity {
         String newGroup = newGroupInput.getText().toString().trim();
         if (!newGroup.isEmpty()) {
             body.put("newCategoryName", newGroup);
-            body.put("newCategoryColor", normalizeColor(groupColorInput.getText().toString()));
+            body.put("newCategoryColor", selectedGroupColor);
         } else {
             int selectedIndex = groupSpinner.getSelectedItemPosition();
             if (selectedIndex > 0 && selectedIndex - 1 < categories.size()) {

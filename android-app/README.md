@@ -9,7 +9,7 @@ This is an experimental native Android helper for this NeonLink fork. It is a sm
 - Logs in with `/api/users/login` and stores the returned `SSID` session cookie.
 - Loads existing NeonLink groups from `/api/categories`.
 - Sends shared links to `/api/share`.
-- Supports saving into an existing group, creating a new group, and adding comma-separated tags.
+- Supports saving into an existing group, creating a new group, choosing the new group color from color swatches, and adding comma-separated tags.
 - Supports HTTPS and cleartext HTTP for private LAN or Tailscale deployments.
 
 ## Build
@@ -48,7 +48,9 @@ android-app/app/build/outputs/apk/debug/
 5. Enter your NeonLink username and password, then tap `Login`.
 6. Share a link from Chrome or another Android app.
 7. Choose `NeonLink Share` in the Android share menu.
-8. Confirm the URL, choose an existing group or enter a new group name, then tap `Save to NeonLink`.
+8. Confirm the URL, choose an existing group or enter a new group name.
+9. If you create a new group, tap a color swatch for the new group color.
+10. Tap `Save to NeonLink`.
 
 After the link is saved, the app shows a short popup message and closes automatically so you return to the app you shared from.
 
